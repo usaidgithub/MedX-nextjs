@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Menu, Plus, Settings, User, MessageCircle, Clock, Trash2, Search, Stethoscope, Heart, Moon, Sun } from 'lucide-react';
+import { Send, Menu, Plus, Settings, User, MessageCircle, Clock, Trash2, Search, Stethoscope, Heart, Moon, Sun, Mic } from 'lucide-react';
 import { useRouter } from 'next/router';
+import VirtualAssistantCard from "./virtualAssistantCard";
 const MedXChatbot = () => {
   const [messages, setMessages] = useState([
     {
@@ -11,6 +12,8 @@ const MedXChatbot = () => {
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
+  const [shouldSpeak, setShouldSpeak] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
@@ -79,6 +82,7 @@ const MedXChatbot = () => {
           }));
 
           setMessages((prev) => [...prev, ...formatted]);
+          console.log("Received messages:", messages);
         }
       } catch (err) {
         console.error("Failed to fetch messages:", err);
@@ -94,113 +98,125 @@ const MedXChatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  const handleVirtualAssistantActivate = () => {
+    setAssistantOpen(true);
+  };
+  // Pass this function to VirtualAssistantCard
+const handleVoiceSubmit = async (voiceInput) => {
+  await handleSendMessage(voiceInput);  // Reuse your chatbot flow
+  setShouldSpeak(true);
+};
+const handleSendMessage = async (messageToSend) => {
+   //Safely normalize to string
+  const safeMessage = typeof messageToSend === "string" ? messageToSend : "";
+  const safeInput = typeof inputMessage === "string" ? inputMessage : "";
+  const message = safeMessage.trim() || safeInput.trim(); // Voice > Text
+  if (!message) return;
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  // Add user message to UI immediately
+  const newMessage = {
+    id: messages.length + 1,
+    type: "user",
+    content: message,
+    timestamp: new Date(),
+  };
 
-    // Add user message to UI immediately
-    const newMessage = {
-      id: messages.length + 1,
-      type: "user",
-      content: inputMessage,
+  setMessages((prev) => [...prev, newMessage]);
+  setInputMessage(""); // Clear text input box
+  setIsTyping(true);
+
+  try {
+    let chatId = currentChatId;
+
+    // 1️⃣ If no active chat, create a new one
+    if (!chatId) {
+      const chatRes = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstMessage: {
+            role: "user",
+            content: message,
+          },
+        }),
+      });
+
+      if (!chatRes.ok) throw new Error("Failed to create new chat");
+      const chatData = await chatRes.json();
+      setChatHistory(prev => [
+        {
+          id: chatData.chatId,
+          title: "AI Consultation",
+          date: new Date().toISOString().split("T")[0],
+          preview: message,
+        },
+        ...prev,
+      ]);
+      chatId = chatData.chatId;
+      setCurrentChatId(chatId);
+    } else {
+      // 2️⃣ Push message to existing chat
+      const msgRes = await fetch(`/api/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId,
+          sender: "user",
+          content: message,
+        }),
+      });
+
+      if (!msgRes.ok) throw new Error("Failed to send message");
+      await msgRes.json();
+    }
+
+    // 3️⃣ Get bot reply
+    const botRes = await fetch(`/api/botreply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chatId,
+        userMessage: message,
+      }),
+    });
+
+    if (!botRes.ok) throw new Error("Failed to get bot reply");
+    const botData = await botRes.json();
+
+    const botResponse = {
+      id: messages.length + 2,
+      type: "bot",
+      content: botData.reply,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, newMessage]);
-    setInputMessage("");
-    setIsTyping(true);
+    setMessages((prev) => [...prev, botResponse]);
 
-    try {
-      let chatId = currentChatId;
-      // 1️⃣ If no active chat, create a new chat with first message
-      if (!chatId) {
-        const chatRes = await fetch("/api/chats", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            firstMessage: {
-              role: "user",
-              content: inputMessage,
-            },
-          }),
-        });
-
-        if (!chatRes.ok) throw new Error("Failed to create new chat");
-        const chatData = await chatRes.json();
-        setChatHistory(prev => [
-        {
-          id: chatId,
-          title: "AI Consultation",
-          date: new Date().toISOString().split("T")[0],
-          preview: inputMessage,
-        },
-        ...prev, // 👈 old chats come after
-      ]);
-        chatId = chatData.chatId;
-        setCurrentChatId(chatId);
-      } else {
-        // 2️⃣ If chat exists, just push message into messages collection
-        const msgRes = await fetch(`/api/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chatId,
-            sender: "user",
-            content: inputMessage,
-          }),
-        });
-
-        if (!msgRes.ok) throw new Error("Failed to send message");
-        await msgRes.json();
-      }
-
-      // 3️⃣ Get bot reply
-      const botRes = await fetch(`/api/botreply`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatId,
-          userMessage: inputMessage,
-        }),
-      });
-
-      if (!botRes.ok) throw new Error("Failed to get bot reply");
-      const botData = await botRes.json();
-      // Add bot's response to UI
-      const botResponse = {
-        id: messages.length + 2,
-        type: "bot",
+    // 4️⃣ Store bot response in DB
+    await fetch(`/api/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chatId,
+        sender: "bot",
         content: botData.reply,
-        timestamp: new Date(),
-      };
+      }),
+    });
 
-      setMessages((prev) => [...prev, botResponse]);
+  } catch (error) {
+    console.error(error);
 
-      // 4️⃣ Store bot message in DB
-      await fetch(`/api/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatId,
-          sender: "bot",
-          content: botData.reply,
-        }),
-      });
-
-    } catch (error) {
-      console.error(error);
-
-      const errorResponse = {
-        id: messages.length + 2,
-        type: "bot",
-        content: "⚠️ Sorry, something went wrong. Please try again.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorResponse]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
+    const errorResponse = {
+      id: messages.length + 2,
+      type: "bot",
+      content: "⚠️ Sorry, something went wrong. Please try again.",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, errorResponse]);
+  } finally {
+    setIsTyping(false);
+  }
+};
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -512,6 +528,21 @@ const MedXChatbot = () => {
             >
               <Send className="w-5 h-5" />
             </button>
+            <button
+              onClick={handleVirtualAssistantActivate}
+              className="bg-blue-500 text-white px-4 py-3 rounded-2xl hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center min-w-[48px]"
+            >
+              <Mic className="w-5 h-5" />
+            </button>
+            {/* Assistant Card */}
+            <VirtualAssistantCard
+              isOpen={assistantOpen}
+              onClose={() => setAssistantOpen(false)}
+              onVoiceSubmit={handleVoiceSubmit}
+              botReply={messages[messages.length - 1]?.type === "bot" ? messages[messages.length - 1].content : ""}
+              shouldSpeak={shouldSpeak}
+              onSpoken={() => setShouldSpeak(false)}
+            />
           </div>
           <p className={`text-xs mt-2 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             ⚕️ Remember: This AI assistant provides general health information and should not replace professional medical advice.
