@@ -13,7 +13,7 @@ export default function SignInForm() {
       try {
         const res = await fetch('/api/check-auth');
         if (res.ok) {
-          router.push('/chatbot');
+          router.push('/home');
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
@@ -40,7 +40,7 @@ export default function SignInForm() {
 
       if (res.ok) {
         setMessage('✅ Login successful!');
-        router.push('/chatbot');
+        router.push('/home');
       } else {
         setMessage(`❌ ${data.message || 'Login failed.'}`);
       }

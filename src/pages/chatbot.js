@@ -29,8 +29,10 @@ const MedXChatbot = () => {
         const res = await fetch('/api/check-auth');
         if (res.ok) {
           //   router.push('/chatbot');
+          console.log('Authenticated');
         }
       } catch (error) {
+        router.push('/login');
         console.error('Error checking authentication:', error);
       }
     };
