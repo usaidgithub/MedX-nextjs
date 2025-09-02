@@ -104,121 +104,121 @@ const MedXChatbot = () => {
     setAssistantOpen(true);
   };
   // Pass this function to VirtualAssistantCard
-const handleVoiceSubmit = async (voiceInput) => {
-  await handleSendMessage(voiceInput);  // Reuse your chatbot flow
-  setShouldSpeak(true);
-};
-const handleSendMessage = async (messageToSend) => {
-   //Safely normalize to string
-  const safeMessage = typeof messageToSend === "string" ? messageToSend : "";
-  const safeInput = typeof inputMessage === "string" ? inputMessage : "";
-  const message = safeMessage.trim() || safeInput.trim(); // Voice > Text
-  if (!message) return;
-
-  // Add user message to UI immediately
-  const newMessage = {
-    id: messages.length + 1,
-    type: "user",
-    content: message,
-    timestamp: new Date(),
+  const handleVoiceSubmit = async (voiceInput) => {
+    await handleSendMessage(voiceInput);  // Reuse your chatbot flow
+    setShouldSpeak(true);
   };
+  const handleSendMessage = async (messageToSend) => {
+    //Safely normalize to string
+    const safeMessage = typeof messageToSend === "string" ? messageToSend : "";
+    const safeInput = typeof inputMessage === "string" ? inputMessage : "";
+    const message = safeMessage.trim() || safeInput.trim(); // Voice > Text
+    if (!message) return;
 
-  setMessages((prev) => [...prev, newMessage]);
-  setInputMessage(""); // Clear text input box
-  setIsTyping(true);
+    // Add user message to UI immediately
+    const newMessage = {
+      id: messages.length + 1,
+      type: "user",
+      content: message,
+      timestamp: new Date(),
+    };
 
-  try {
-    let chatId = currentChatId;
+    setMessages((prev) => [...prev, newMessage]);
+    setInputMessage(""); // Clear text input box
+    setIsTyping(true);
 
-    // 1️⃣ If no active chat, create a new one
-    if (!chatId) {
-      const chatRes = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstMessage: {
-            role: "user",
-            content: message,
+    try {
+      let chatId = currentChatId;
+
+      // 1️⃣ If no active chat, create a new one
+      if (!chatId) {
+        const chatRes = await fetch("/api/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstMessage: {
+              role: "user",
+              content: message,
+            },
+          }),
+        });
+
+        if (!chatRes.ok) throw new Error("Failed to create new chat");
+        const chatData = await chatRes.json();
+        setChatHistory(prev => [
+          {
+            id: chatData.chatId,
+            title: "AI Consultation",
+            date: new Date().toISOString().split("T")[0],
+            preview: message,
           },
-        }),
-      });
+          ...prev,
+        ]);
+        chatId = chatData.chatId;
+        setCurrentChatId(chatId);
+      } else {
+        // 2️⃣ Push message to existing chat
+        const msgRes = await fetch(`/api/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chatId,
+            sender: "user",
+            content: message,
+          }),
+        });
 
-      if (!chatRes.ok) throw new Error("Failed to create new chat");
-      const chatData = await chatRes.json();
-      setChatHistory(prev => [
-        {
-          id: chatData.chatId,
-          title: "AI Consultation",
-          date: new Date().toISOString().split("T")[0],
-          preview: message,
-        },
-        ...prev,
-      ]);
-      chatId = chatData.chatId;
-      setCurrentChatId(chatId);
-    } else {
-      // 2️⃣ Push message to existing chat
-      const msgRes = await fetch(`/api/messages`, {
+        if (!msgRes.ok) throw new Error("Failed to send message");
+        await msgRes.json();
+      }
+
+      // 3️⃣ Get bot reply
+      const botRes = await fetch(`/api/botreply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chatId,
-          sender: "user",
-          content: message,
+          userMessage: message,
         }),
       });
 
-      if (!msgRes.ok) throw new Error("Failed to send message");
-      await msgRes.json();
-    }
+      if (!botRes.ok) throw new Error("Failed to get bot reply");
+      const botData = await botRes.json();
 
-    // 3️⃣ Get bot reply
-    const botRes = await fetch(`/api/botreply`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatId,
-        userMessage: message,
-      }),
-    });
-
-    if (!botRes.ok) throw new Error("Failed to get bot reply");
-    const botData = await botRes.json();
-
-    const botResponse = {
-      id: messages.length + 2,
-      type: "bot",
-      content: botData.reply,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, botResponse]);
-
-    // 4️⃣ Store bot response in DB
-    await fetch(`/api/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatId,
-        sender: "bot",
+      const botResponse = {
+        id: messages.length + 2,
+        type: "bot",
         content: botData.reply,
-      }),
-    });
+        timestamp: new Date(),
+      };
 
-  } catch (error) {
-    console.error(error);
+      setMessages((prev) => [...prev, botResponse]);
 
-    const errorResponse = {
-      id: messages.length + 2,
-      type: "bot",
-      content: "⚠️ Sorry, something went wrong. Please try again.",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, errorResponse]);
-  } finally {
-    setIsTyping(false);
-  }
-};
+      // 4️⃣ Store bot response in DB
+      await fetch(`/api/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId,
+          sender: "bot",
+          content: botData.reply,
+        }),
+      });
+
+    } catch (error) {
+      console.error(error);
+
+      const errorResponse = {
+        id: messages.length + 2,
+        type: "bot",
+        content: "⚠️ Sorry, something went wrong. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -473,17 +473,16 @@ const handleSendMessage = async (messageToSend) => {
                     {message.content}
                   </p>
                   <p
-  suppressHydrationWarning
-  className={`text-xs mt-2 ${
-    message.type === 'user'
-      ? 'text-blue-100'
-      : darkMode
-      ? 'text-gray-400'
-      : 'text-gray-500'
-  }`}
->
-  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-</p>
+                    suppressHydrationWarning
+                    className={`text-xs mt-2 ${message.type === 'user'
+                        ? 'text-blue-100'
+                        : darkMode
+                          ? 'text-gray-400'
+                          : 'text-gray-500'
+                      }`}
+                  >
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 </div>
               </div>
             </div>
