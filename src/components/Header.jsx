@@ -141,7 +141,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
           showMobileMenu ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex flex-col items-center space-y-6 pt-8">
+        <div className="flex flex-col items-center space-y-6 pt-8 bg-white">
           {["Home", "Services", "MedStore", "About Us", "Contact"].map(
             (item) => (
               <button
