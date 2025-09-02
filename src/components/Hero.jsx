@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Users, ShieldCheck, Clock } from "lucide-react";
+import Link from "next/link";
 
 const Hero = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -30,12 +31,13 @@ const Hero = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 mb-8">
-              <button
+              <Link href="/appoint">
+              <button 
                 className="bg-white text-blue-800 hover:bg-gray-100 px-7 py-3 rounded-full font-semibold text-lg shadow-lg transition-all transform hover:scale-105 flex items-center justify-center"
               >
                 Book Appointment
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </button>
+              </button></Link>
             </div>
 
             {/* Quick Features */}
@@ -100,12 +102,13 @@ const Hero = () => {
                     rows="3"
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-5 py-3 text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   />
+                  <Link href="/appoint">
                   <button
                     type="submit"
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-lg font-semibold text-lg transition-all"
                   >
                     Book Now
-                  </button>
+                  </button></Link>
 
                   {submitted && (
                     <div className="mt-3 text-sm text-green-600 text-center">

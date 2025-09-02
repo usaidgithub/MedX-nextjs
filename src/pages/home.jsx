@@ -5,7 +5,9 @@ import Services from '@/components/Services';
 import HealthArticles from '@/components/HealthArticles';
 import FAQ from '@/components/FAQ';
 import Footer from '@/components/Footer';
-import MedicalStore from '@/components/Medstore'; // Your medical store component
+import MedicalStore from '@/components/Medstore';
+import Link from 'next/link';
+ // Your medical store component
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('home'); // Track current page
