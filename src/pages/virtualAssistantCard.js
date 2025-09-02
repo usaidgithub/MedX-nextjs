@@ -66,7 +66,7 @@ const VirtualAssistantCard = ({ isOpen, onClose, onVoiceSubmit,botReply,shouldSp
     utterance.pitch = 1; // adjust pitch
     window.speechSynthesis.cancel(); // Stop previous speech
     window.speechSynthesis.speak(utterance);
-    setSpeechResult(text);
+    
   };
 
     useEffect(() => {

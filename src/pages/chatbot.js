@@ -472,18 +472,14 @@ const MedXChatbot = () => {
                     }`}>
                     {message.content}
                   </p>
-                  <p
-                    suppressHydrationWarning
-                    className={`text-xs mt-2 ${message.type === 'user'
-                        ? 'text-blue-100'
-                        : darkMode
-                          ? 'text-gray-400'
-                          : 'text-gray-500'
-                      }`}
-                  >
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <p className={`text-xs mt-2 ${message.type === 'user'
+                    ? 'text-blue-100'
+                    : darkMode
+                      ? 'text-gray-400'
+                      : 'text-gray-500'
+                    }`}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
-
                 </div>
               </div>
             </div>
