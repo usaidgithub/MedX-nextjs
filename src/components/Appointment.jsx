@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Calendar, Clock, MapPin, Star, User, Heart, Brain, Eye, Bone, Baby, Stethoscope } from 'lucide-react';
-
+import { useRouter } from 'next/router';
 const Appointment = () => {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,7 +110,22 @@ const Appointment = () => {
     const matchesSpecialty = selectedSpecialty === 'all' || doctor.specialty === selectedSpecialty;
     return matchesSearch && matchesSpecialty;
   });
-
+  const router = useRouter();
+useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/check-auth');
+        if (res.ok) {
+          //   router.push('/chatbot');
+          console.log('Authenticated');
+        }
+      } catch (error) {
+        router.push('/login');
+        console.error('Error checking authentication:', error);
+      }
+    };
+    checkAuth();
+  }, [router]);
   const handleInputChange = (e) => {
     setBookingData({
       ...bookingData,
@@ -121,31 +136,77 @@ const Appointment = () => {
   const handleBookAppointment = (doctor) => {
     setSelectedDoctor(doctor);
     setShowBookingForm(true);
+    console.log('Selected doctor:', doctor);
   };
 
-  const handleSubmitBooking = () => {
-    // Here you would typically send the booking data to your backend
-    if (bookingData.patientName && bookingData.age && bookingData.gender && 
-        bookingData.phone && bookingData.email && bookingData.preferredDate && 
-        bookingData.preferredTime) {
-      alert(`Appointment booked successfully with ${selectedDoctor.name}!`);
-      setShowBookingForm(false);
-      setBookingData({
-        patientName: '',
-        age: '',
-        gender: '',
-        phone: '',
-        email: '',
-        preferredDate: '',
-        preferredTime: '',
-        medicalHistory: '',
-        currentSymptoms: '',
-        emergencyContact: ''
+const handleSubmitBooking = () => {
+  // Validate required fields
+  if (
+    bookingData.patientName && bookingData.age && bookingData.gender &&
+    bookingData.phone && bookingData.email && bookingData.preferredDate &&
+    bookingData.preferredTime
+  ) {
+    // Create structured booking payload
+    const bookingPayload = {
+      doctor: {
+        id: selectedDoctor.id,
+        name: selectedDoctor.name,
+        specialty: selectedDoctor.specialty,
+        consultationFee: selectedDoctor.consultationFee,
+      },
+      patientDetails: {
+        patientName: bookingData.patientName,
+        age: bookingData.age,
+        gender: bookingData.gender,
+        phone: bookingData.phone,
+        email: bookingData.email,
+        medicalHistory: bookingData.medicalHistory,
+        currentSymptoms: bookingData.currentSymptoms,
+        emergencyContact: bookingData.emergencyContact,
+      },
+      preferredDate: bookingData.preferredDate,
+      preferredTime: bookingData.preferredTime,
+    };
+
+    console.log("Booking Payload:", bookingPayload);
+
+    // Send data to backend
+    fetch("/api/book-appointment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bookingPayload),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.message === "Appointment booked successfully") {
+          alert(`Appointment booked successfully with ${selectedDoctor.name}!`);
+          setShowBookingForm(false);
+          setBookingData({
+            patientName: "",
+            age: "",
+            gender: "",
+            phone: "",
+            email: "",
+            preferredDate: "",
+            preferredTime: "",
+            medicalHistory: "",
+            currentSymptoms: "",
+            emergencyContact: "",
+          });
+        } else {
+          alert(data.message || "Failed to book appointment.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
       });
-    } else {
-      alert('Please fill in all required fields.');
-    }
-  };
+  } else {
+    alert("Please fill in all required fields.");
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white pt-20">

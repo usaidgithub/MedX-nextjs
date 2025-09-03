@@ -1,27 +1,14 @@
 import { useState } from "react";
 import { Heart, Menu, PhoneCall, X } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
-const Header = ({ currentPage, setCurrentPage }) => {
+const Header = () => {
   const [showEmergency, setShowEmergency] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const router = useRouter();
 
-  // Handle navigation clicks
-  const handleNavClick = (item) => {
-    if (item === "MedStore") {
-      setCurrentPage("store");
-    } else if (item === "Home") {
-      setCurrentPage("home");
-    } else {
-      setCurrentPage("home");
-      setTimeout(() => {
-        const element = document.getElementById(
-          item.toLowerCase().replace(/\s+/g, "")
-        );
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
-    }
+  const handleNavClick = () => {
     setShowEmergency(false);
     setShowMobileMenu(false);
   };
@@ -35,49 +22,49 @@ const Header = ({ currentPage, setCurrentPage }) => {
     desktopNav: "relative text-lg lg:text-xl font-medium transition-colors duration-300 group"
   };
 
+  const navItems = [
+    { name: "Home", path: "/home" },
+    { name: "Schemes", path: "/schemes" },
+    { name: "MedStore", path: "/pharmacy" },
+    { name: "Donation", path: "/donation" },
+    { name: "Appointments", path: "/userappoint" },
+  ];
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-100">
       <div className="container mx-auto px-6 py-4">
         <nav className="flex items-center justify-between">
           {/* Logo */}
-          <div
-            className="flex items-center space-x-3 cursor-pointer select-none"
-            onClick={() => handleNavClick("Home")}
-          >
+          <Link href="/" onClick={handleNavClick} className="flex items-center space-x-3 cursor-pointer select-none">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-medical-primary rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:rotate-6">
-              <Heart className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              {/* Changed heart color to text-blue-500 for visibility */}
+              <Heart className="w-6 h-6 md:w-7 md:h-7 text-blue-500" /> 
             </div>
             <span className="text-2xl md:text-3xl font-extrabold tracking-tight text-medical-primary">
               Cura<span className="text-gray-800">AI</span>
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8 lg:space-x-12">
-            {["Home", "Services", "MedStore", "About Us", "Contact"].map(
-              (item) => (
-                <button
-                  key={item}
-                  onClick={() => handleNavClick(item)}
-                  className={`${buttonClassNames.desktopNav} ${
-                    (currentPage === "store" && item === "MedStore") ||
-                    (currentPage === "home" && item === "Home")
-                      ? "text-medical-primary"
-                      : "text-gray-600 hover:text-medical-primary"
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.path}
+                className={`${buttonClassNames.desktopNav} ${
+                  router.pathname === item.path
+                    ? "text-medical-primary"
+                    : "text-gray-600 hover:text-medical-primary"
+                }`}
+              >
+                {item.name}
+                <span
+                  className={`absolute left-0 -bottom-1 h-0.5 bg-medical-primary transition-all duration-300 group-hover:w-full ${
+                    router.pathname === item.path ? "w-full" : "w-0"
                   }`}
-                >
-                  {item}
-                  <span
-                    className={`absolute left-0 -bottom-1 h-0.5 bg-medical-primary transition-all duration-300 group-hover:w-full ${
-                      (currentPage === "store" && item === "MedStore") ||
-                      (currentPage === "home" && item === "Home")
-                        ? "w-full"
-                        : "w-0"
-                    }`}
-                  ></span>
-                </button>
-              )
-            )}
+                ></span>
+              </Link>
+            ))}
           </div>
 
           {/* CTA Section (Emergency + Login) */}
@@ -114,11 +101,10 @@ const Header = ({ currentPage, setCurrentPage }) => {
                 </div>
               )}
             </div>
-
             {/* Login Button */}
-            <button className={buttonClassNames.login}>
+            <Link href="/profile" className={buttonClassNames.login}>
               Profile
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -142,22 +128,20 @@ const Header = ({ currentPage, setCurrentPage }) => {
         }`}
       >
         <div className="flex flex-col items-center space-y-6 pt-8 bg-white">
-          {["Home", "Services", "MedStore", "About Us", "Contact"].map(
-            (item) => (
-              <button
-                key={item}
-                onClick={() => handleNavClick(item)}
-                className={`text-2xl font-semibold transition-colors duration-300 ${
-                  (currentPage === "store" && item === "MedStore") ||
-                  (currentPage === "home" && item === "Home")
-                    ? "text-medical-primary"
-                    : "text-gray-700 hover:text-medical-primary"
-                }`}
-              >
-                {item}
-              </button>
-            )
-          )}
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.path}
+              onClick={handleNavClick}
+              className={`text-2xl font-semibold transition-colors duration-300 ${
+                router.pathname === item.path
+                  ? "text-medical-primary"
+                  : "text-gray-700 hover:text-medical-primary"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
           <div className="flex flex-col items-center space-y-4 pt-4 w-full px-6">
             <div className="w-full relative">
               <button
@@ -190,9 +174,9 @@ const Header = ({ currentPage, setCurrentPage }) => {
                 </div>
               )}
             </div>
-            <button className={buttonClassNames.mobileLogin}>
+            <Link href="/login" onClick={handleNavClick} className={buttonClassNames.mobileLogin}>
               Sign up / Login
-            </button>
+            </Link>
           </div>
         </div>
       </div>
