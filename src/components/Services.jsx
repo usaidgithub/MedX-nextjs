@@ -24,6 +24,7 @@ const services = [
     description:
       "Comprehensive analysis of your medical reports with detailed insights and treatment suggestions.",
     color: "text-medical-primary",
+    link:"/reportanalyse",
   },
   {
     icon: Video,

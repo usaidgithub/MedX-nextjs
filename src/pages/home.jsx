@@ -6,6 +6,7 @@ import HealthArticles from '@/components/HealthArticles';
 import FAQ from '@/components/FAQ';
 import Footer from '@/components/Footer';
 import MedicalStore from '@/components/Medstore';
+import Securityban from '@/components/SecurityBanner';
 import Link from 'next/link';
  // Your medical store component
 
@@ -24,6 +25,7 @@ const Index = () => {
             <main>
               <Hero />
               <Services />
+              <Securityban />
               <HealthArticles />
               <FAQ />
             </main>
