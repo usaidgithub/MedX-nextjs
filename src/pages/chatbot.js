@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Menu, Plus, Settings, User, MessageCircle, Clock, Trash2, Search, Stethoscope, Heart, Moon, Sun, Mic } from 'lucide-react';
 import { useRouter } from 'next/router';
+import { marked } from 'marked';
 import VirtualAssistantCard from "./virtualAssistantCard";
 const MedXChatbot = () => {
   const [messages, setMessages] = useState([
@@ -464,21 +465,23 @@ const MedXChatbot = () => {
                     ? 'bg-gray-700 border border-gray-600'
                     : 'bg-white border border-gray-200'
                   }`}>
-                  <p className={`text-sm ${message.type === 'user'
-                    ? 'text-white'
-                    : darkMode
-                      ? 'text-gray-100'
-                      : 'text-gray-800'
-                    }`}>
-                    {message.content}
-                  </p>
+                  <div
+                    className={`text-sm ${message.type === 'user'
+                      ? 'text-white'
+                      : darkMode
+                        ? 'text-gray-100'
+                        : 'text-gray-800'
+                      }`}
+                    dangerouslySetInnerHTML={{ __html: marked(message.content) }}
+                  />
+
                   <p
                     suppressHydrationWarning
                     className={`text-xs mt-2 ${message.type === 'user'
-                        ? 'text-blue-100'
-                        : darkMode
-                          ? 'text-gray-400'
-                          : 'text-gray-500'
+                      ? 'text-blue-100'
+                      : darkMode
+                        ? 'text-gray-400'
+                        : 'text-gray-500'
                       }`}
                   >
                     {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
