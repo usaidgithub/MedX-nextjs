@@ -250,7 +250,7 @@ const VirtualAssistantCard = ({ isOpen, onClose, onVoiceSubmit, botReply, should
                     Result:
                   </p>
                   <p className="text-md italic text-gray-600 dark:text-gray-300 mt-1">
-                    "{speechResult}"
+                    &quot;{speechResult}&quot;
                   </p>
                 </div>
               )}

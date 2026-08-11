@@ -25,7 +25,7 @@ const Index = () => {
             <main>
               <Hero />
               <Services />
-              <Securityban />
+              {/* <Securityban /> */}
               <HealthArticles />
               <FAQ />
             </main>

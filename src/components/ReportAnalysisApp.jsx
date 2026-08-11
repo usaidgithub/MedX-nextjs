@@ -66,7 +66,7 @@ const ReportAnalysisApp = () => {
       const formData = new FormData();
       formData.append('report', file);
 
-      const response = await fetch('http://localhost:5000/analyze', {
+      const response = await fetch('https://cura-ai-report-analyzer.onrender.com/analyze', {
         method: 'POST',
         body: formData,
       });

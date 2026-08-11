@@ -273,7 +273,7 @@ const MedXLandingPage = () => {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed italic">
-                  "{testimonial.comment}"
+                  &quot;{testimonial.comment}&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
